@@ -4,24 +4,14 @@ import gui.components.ChatArea;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.control.Label;
-import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane;
 import javafx.geometry.Pos;
@@ -37,7 +27,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,17 +54,28 @@ public class ChatClientGUI extends Application {
     }
 
     private void initGUI(Stage stage) {
-        HBox root = new HBox();
+        VBox root = new VBox();
         root.getStyleClass().add("root");
 
-        // 1. Sidebar (Combined Header + Search + List + Footer)
+        // 1. Top App Bar
+        HBox topBar = createTopAppBar();
+        
+        // 2. Main Body Container
+        HBox body = new HBox();
+        VBox.setVgrow(body, Priority.ALWAYS);
+
+        // 2a. Side Rail
+        VBox sideRail = createSideRail();
+        
+        // 2b. User Sidebar
         VBox userSidebar = createUserSidebar();
         
-        // 2. Main Chat Area
+        // 2c. Main Chat Area
         chatArea = new ChatArea(this::sendMessage);
         HBox.setHgrow(chatArea, Priority.ALWAYS);
 
-        root.getChildren().addAll(userSidebar, chatArea);
+        body.getChildren().addAll(sideRail, userSidebar, chatArea);
+        root.getChildren().addAll(topBar, body);
 
         Scene scene = new Scene(root, 1280, 800);
 
@@ -84,66 +84,141 @@ public class ChatClientGUI extends Application {
             scene.getStylesheets().add(cssFile.toURI().toString());
         }
 
-        stage.setTitle("TCP");
+        stage.setTitle("DevChat v1.0");
         stage.setScene(scene);
         stage.setOnCloseRequest(e -> disconnect());
         stage.show();
     }
 
-    private VBox createUserSidebar() {
-        VBox sidebar = new VBox();
-        sidebar.getStyleClass().add("user-sidebar");
-        sidebar.setPrefWidth(380); // Matching sidebar-width from mockup
+    private HBox createTopAppBar() {
+        HBox topBar = new HBox(40);
+        topBar.getStyleClass().add("top-app-bar");
+        topBar.setPrefHeight(64);
+        topBar.setAlignment(Pos.CENTER_LEFT);
 
-        // Sidebar Header
-        HBox header = new HBox(12);
-        header.getStyleClass().add("sidebar-header");
-        header.setAlignment(Pos.CENTER_LEFT);
-        
-        Circle profileImg = new Circle(20, Color.web("#eceef0"));
-        profileImg.setStroke(Color.web("#06b6d4"));
-        
-        VBox titleGroup = new VBox(-2);
-        Label mainTitle = new Label("TCP");
-        mainTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -app-primary;");
-        Label subTitle = new Label("Pro Terminal");
-        subTitle.setStyle("-fx-font-size: 11px; -fx-text-fill: -app-on-surface-variant; -fx-font-weight: bold;");
-        titleGroup.getChildren().addAll(mainTitle, subTitle);
-        
+        Label title = new Label("DevChat v1.0");
+        title.getStyleClass().add("app-title");
+
+        HBox nav = new HBox(24);
+        nav.setAlignment(Pos.CENTER);
+        Label link1 = new Label("Direct");
+        Label link2 = new Label("Channels");
+        Label link3 = new Label("Nodes");
+        link1.getStyleClass().add("nav-link");
+        link2.getStyleClass().addAll("nav-link", "nav-link-active");
+        link3.getStyleClass().add("nav-link");
+        nav.getChildren().addAll(link1, link2, link3);
+
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        
-        HBox headerActions = new HBox(5);
-        String[] icons = {"🌱", "🗨", "👥", "⋮"};
-        for (String icon : icons) {
-            Button btn = new Button(icon);
-            btn.setStyle("-fx-background-color: transparent; -fx-text-fill: -app-on-surface-variant; -fx-font-size: 16px;");
-            headerActions.getChildren().add(btn);
-        }
-        
-        header.getChildren().addAll(profileImg, titleGroup, spacer, headerActions);
 
-        // Search Bar Area
-        VBox searchArea = new VBox();
-        searchArea.setPadding(new Insets(12));
         HBox searchBox = new HBox(10);
         searchBox.getStyleClass().add("search-box");
         searchBox.setAlignment(Pos.CENTER_LEFT);
-        Label searchIcon = new Label("🔍");
+        searchBox.setPrefWidth(256);
         TextField searchField = new TextField();
-        searchField.setPromptText("Search or start new chat");
-        searchField.getStyleClass().add("input-field-custom");
-        HBox.setHgrow(searchField, Priority.ALWAYS);
-        searchBox.getChildren().addAll(searchIcon, searchField);
+        searchField.setPromptText("Search data points...");
+        searchField.setStyle("-fx-background-color: transparent; -fx-text-fill: -app-on-surface;");
+        Label searchIcon = new Label("🔍");
+        searchIcon.setStyle("-fx-text-fill: -app-on-surface-variant;");
+        searchBox.getChildren().addAll(searchField, searchIcon);
+
+        HBox actions = new HBox(15);
+        actions.setAlignment(Pos.CENTER);
+        String[] icons = {"💻", "📡", "⋮"};
+        for (String icon : icons) {
+            Label l = new Label(icon);
+            l.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 18px; -fx-cursor: hand;");
+            actions.getChildren().add(l);
+        }
+
+        Circle avatar = new Circle(16, Color.web("#2d3449"));
+        avatar.setStroke(Color.web("#3d494c"));
+
+        topBar.getChildren().addAll(title, nav, spacer, searchBox, actions, avatar);
+        return topBar;
+    }
+
+    private VBox createSideRail() {
+        VBox rail = new VBox(32);
+        rail.getStyleClass().add("side-rail");
+        rail.setPrefWidth(80);
+        rail.setAlignment(Pos.TOP_CENTER);
+
+        ImageView profileImg = new ImageView(); // Placeholder for mockup image
+        profileImg.setFitWidth(40);
+        profileImg.setFitHeight(40);
+        Circle clip = new Circle(20, 20, 20);
+        profileImg.setClip(clip);
+
+        VBox navGroup = new VBox(20);
+        navGroup.setAlignment(Pos.CENTER);
+        
+        VBox btnChat = createRailButton("🗨", "Chats", true);
+        VBox btnContacts = createRailButton("👥", "Contacts", false);
+        VBox btnArchive = createRailButton("📦", "Archive", false);
+        VBox btnSettings = createRailButton("⚙", "Settings", false);
+        
+        navGroup.getChildren().addAll(btnChat, btnContacts, btnArchive, btnSettings);
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        VBox btnSupport = createRailButton("❓", "Support", false);
+
+        rail.getChildren().addAll(profileImg, navGroup, spacer, btnSupport);
+        return rail;
+    }
+
+    private VBox createRailButton(String icon, String label, boolean active) {
+        VBox box = new VBox(4);
+        box.setAlignment(Pos.CENTER);
+        box.getStyleClass().add("rail-button");
+        if (active) box.getStyleClass().add("rail-button-active");
+        
+        Label lIcon = new Label(icon);
+        lIcon.setStyle("-fx-font-size: 20px;");
+        Label lText = new Label(label);
+        lText.setStyle("-fx-font-size: 10px;");
+        
+        box.getChildren().addAll(lIcon, lText);
+        return box;
+    }
+
+    private VBox createUserSidebar() {
+        VBox sidebar = new VBox();
+        sidebar.getStyleClass().add("user-sidebar");
+        sidebar.setPrefWidth(320);
+
+        HBox header = new HBox();
+        header.getStyleClass().add("sidebar-header");
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label title = new Label("Messages");
+        title.getStyleClass().add("sidebar-title");
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        Label editIcon = new Label("📝");
+        editIcon.setStyle("-fx-text-fill: -app-primary; -fx-font-size: 18px;");
+        header.getChildren().addAll(title, spacer, editIcon);
+
+        VBox searchArea = new VBox();
+        searchArea.getStyleClass().add("search-box-container");
+        HBox searchBox = new HBox(10);
+        searchBox.getStyleClass().add("search-box");
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search threads...");
+        searchField.setStyle("-fx-background-color: transparent; -fx-text-fill: -app-on-surface;");
+        Label filterIcon = new Label("≡");
+        filterIcon.setStyle("-fx-text-fill: -app-on-surface-variant;");
+        searchBox.getChildren().addAll(searchField, filterIcon);
         searchArea.getChildren().add(searchBox);
 
-        // User List (Scrollable)
         userListContainer = new VBox(0);
         userListContainer.getChildren().addAll(
-            createUserItem("Core_Dev_Team", "Pushing TCP optimizations...", true),
-            createUserItem("Sec_Ops_Lead", "Firewall rules updated.", false),
-            createUserItem("Database_Node_01", "Replication lag detected.", false),
-            createUserItem("Archives_Network", "Sent a screenshot", false)
+            createUserItem("Core_Dev_Team", "Pushing the latest API node...", true),
+            createUserItem("Sec_Ops_Lead", "Unauthorized access detected...", false),
+            createUserItem("Data_Viz_Specialist", "The quarterly metrics look solid.", false)
         );
         
         ScrollPane scrollPane = new ScrollPane(userListContainer);
@@ -151,44 +226,10 @@ public class ChatClientGUI extends Application {
         scrollPane.getStyleClass().add("chat-scroll-pane");
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
-        // Sidebar Footer
-        HBox footer = new HBox();
-        footer.getStyleClass().add("sidebar-footer");
-        footer.setAlignment(Pos.CENTER);
-        footer.setPadding(new Insets(10));
-        
-        String[] footerLabels = {"Chats", "Archive", "Settings"};
-        String[] footerIcons = {"🗨", "📦", "⚙"};
-        for (int i = 0; i < footerLabels.length; i++) {
-            VBox btn = createFooterButton(footerIcons[i], footerLabels[i], i == 0);
-            HBox.setHgrow(btn, Priority.ALWAYS);
-            footer.getChildren().add(btn);
-        }
-
-        sidebar.getChildren().addAll(header, searchArea, scrollPane, footer);
+        sidebar.getChildren().addAll(header, searchArea, scrollPane);
         return sidebar;
     }
 
-    private VBox createFooterButton(String icon, String text, boolean active) {
-        VBox box = new VBox(2);
-        box.setAlignment(Pos.CENTER);
-        box.setPadding(new Insets(5));
-        Label lIcon = new Label(icon);
-        lIcon.setStyle("-fx-font-size: 20px;");
-        Label lText = new Label(text.toUpperCase());
-        lText.setStyle("-fx-font-size: 10px; -fx-font-weight: bold;");
-        
-        if (active) {
-            lIcon.setStyle(lIcon.getStyle() + "-fx-text-fill: -app-primary;");
-            lText.setStyle(lText.getStyle() + "-fx-text-fill: -app-primary;");
-        } else {
-            lIcon.setStyle(lIcon.getStyle() + "-fx-text-fill: -app-on-surface-variant;");
-            lText.setStyle(lText.getStyle() + "-fx-text-fill: -app-on-surface-variant;");
-        }
-        
-        box.getChildren().addAll(lIcon, lText);
-        return box;
-    }
 
     private HBox createUserItem(String name, String status, boolean active) {
         HBox item = new HBox(12);
@@ -197,22 +238,26 @@ public class ChatClientGUI extends Application {
         item.setAlignment(Pos.CENTER_LEFT);
 
         StackPane avatarStack = new StackPane();
-        Circle avatar = new Circle(18, Color.web("#eceef0"));
-        avatar.setStroke(Color.web("#bcc9cd", 0.5));
-        Circle statusDot = new Circle(5, Color.web("#1bbd85"));
-        statusDot.setStroke(Color.web("#ffffff"));
-        statusDot.setStrokeWidth(2);
-        StackPane.setAlignment(statusDot, Pos.BOTTOM_RIGHT);
-        avatarStack.getChildren().addAll(avatar, statusDot);
+        Circle avatar = new Circle(20, Color.web("#171f33"));
+        avatar.setStroke(Color.web("#3d494c"));
+        
+        if (active || name.equals("Core_Dev_Team")) {
+            Circle statusDot = new Circle(5, Color.web("#4cd7f6"));
+            statusDot.setStroke(Color.web("#060e20"));
+            statusDot.setStrokeWidth(2);
+            StackPane.setAlignment(statusDot, Pos.BOTTOM_RIGHT);
+            avatarStack.getChildren().add(statusDot);
+        }
+        avatarStack.getChildren().add(0, avatar);
 
         VBox details = new VBox(2);
         HBox topRow = new HBox();
         Label nameLabel = new Label(name);
-        nameLabel.setStyle("-fx-text-fill: -app-on-surface; -fx-font-weight: bold; -fx-font-size: 13px;");
+        nameLabel.setStyle("-fx-text-fill: -app-on-surface; -fx-font-weight: 500; -fx-font-size: 14px;");
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Label timeLabel = new Label("14:20");
-        timeLabel.setStyle("-fx-text-fill: -app-primary; -fx-font-weight: bold; -fx-font-size: 11px;");
+        Label timeLabel = new Label(active ? "12:45" : "10:12");
+        timeLabel.setStyle("-fx-text-fill: " + (active ? "-app-primary" : "-app-on-surface-variant") + "; -fx-font-size: 10px;");
         topRow.getChildren().addAll(nameLabel, spacer, timeLabel);
 
         Label statusLabel = new Label(status);

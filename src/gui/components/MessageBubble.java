@@ -1,62 +1,58 @@
 package gui.components;
 
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 
 public class MessageBubble {
-    public static VBox create(String name, String time, String message, boolean isMe) {
-        VBox container = new VBox(5);
-        container.getStyleClass().add("message-item");
-        container.setAlignment(isMe ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
 
-        HBox horizontalLayout = new HBox(12);
-        horizontalLayout.setAlignment(isMe ? Pos.TOP_RIGHT : Pos.TOP_LEFT);
+    public static HBox create(String sender, String time, String content, boolean isMe) {
+        HBox wrapper = new HBox();
+        wrapper.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        wrapper.setPadding(new Insets(5, 0, 5, 0));
 
-        // Avatar
-        Circle avatar = new Circle(18);
-        avatar.setFill(isMe ? Color.web("#eceef0") : Color.web("#06b6d4"));
-        avatar.setStroke(Color.web("#bcc9cd", 0.5));
-
-        VBox contentBox = new VBox(4);
-        contentBox.setMaxWidth(600);
-
-        // Header: Name and Time
-        HBox header = new HBox(8);
-        header.setAlignment(Pos.BOTTOM_LEFT);
-        
-        Label nameLabel = new Label(isMe ? "You" : name);
-        nameLabel.getStyleClass().add("message-sender");
-        if (isMe) nameLabel.setStyle("-fx-text-fill: -app-primary;");
-        
-        Label timeLabel = new Label(time);
-        timeLabel.getStyleClass().add("message-time");
-        
-        header.getChildren().addAll(nameLabel, timeLabel);
-
-        // Message Bubble
-        Label content = new Label(message);
-        content.setWrapText(true);
-        content.getStyleClass().add("message-content");
-        if (isMe) content.getStyleClass().add("message-content-me");
-
-        VBox bubble = new VBox(content);
+        VBox bubble = new VBox(4);
+        bubble.setMaxWidth(500);
         bubble.getStyleClass().add(isMe ? "message-bubble-outgoing" : "message-bubble-incoming");
 
-        contentBox.getChildren().addAll(header, bubble);
-
-        if (isMe) {
-            horizontalLayout.getChildren().addAll(contentBox, avatar);
-        } else {
-            horizontalLayout.getChildren().addAll(avatar, contentBox);
+        if (!isMe) {
+            Label nameLabel = new Label(sender);
+            nameLabel.setStyle("-fx-text-fill: -app-primary; -fx-font-weight: bold; -fx-font-size: 11px;");
+            bubble.getChildren().add(nameLabel);
         }
 
-        container.getChildren().add(horizontalLayout);
-        return container;
+        Label contentLabel = new Label(content);
+        contentLabel.setWrapText(true);
+        contentLabel.getStyleClass().add(isMe ? "message-content-me" : "message-content");
+        
+        HBox meta = new HBox(5);
+        meta.setAlignment(isMe ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        Label timeLabel = new Label(time);
+        timeLabel.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 10px;");
+        meta.getChildren().add(timeLabel);
+        
+        if (isMe) {
+            Label check = new Label("✓✓");
+            check.setStyle("-fx-text-fill: #003640; -fx-font-size: 10px;");
+            meta.getChildren().add(check);
+        }
+
+        bubble.getChildren().addAll(contentLabel, meta);
+        wrapper.getChildren().add(bubble);
+        return wrapper;
+    }
+
+    public static HBox createSystemMessage(String content) {
+        HBox wrapper = new HBox();
+        wrapper.setAlignment(Pos.CENTER);
+        wrapper.setPadding(new Insets(10, 0, 10, 0));
+        
+        Label l = new Label(content.toUpperCase());
+        l.setStyle("-fx-background-color: #222a3d; -fx-text-fill: -app-on-surface-variant; -fx-font-size: 10px; -fx-font-weight: bold; -fx-padding: 4 12; -fx-background-radius: 20; -fx-border-color: -app-outline-variant; -fx-border-radius: 20; -fx-letter-spacing: 0.1em;");
+        
+        wrapper.getChildren().add(l);
+        return wrapper;
     }
 }

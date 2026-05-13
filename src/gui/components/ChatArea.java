@@ -1,5 +1,6 @@
 package gui.components;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -20,7 +21,6 @@ public class ChatArea extends BorderPane {
     private VBox chatBox;
     private ScrollPane chatScrollPane;
     private TextField inputField;
-    private Label activeMembersLabel;
     private int messageCount = 0;
 
     public ChatArea(Runnable onSendAction) {
@@ -32,78 +32,79 @@ public class ChatArea extends BorderPane {
         header.getStyleClass().add("chat-header");
         header.setPrefHeight(64);
 
-        Circle avatar = new Circle(20, Color.web("#eceef0"));
-        avatar.setStroke(Color.web("#06b6d4"));
+        StackPane avatarStack = new StackPane();
+        Circle avatar = new Circle(20, Color.web("#2d3449"));
+        avatar.setStroke(Color.web("#3d494c"));
+        Circle statusDot = new Circle(5, Color.web("#4cd7f6"));
+        statusDot.setStroke(Color.web("#0b1326"));
+        statusDot.setStrokeWidth(2);
+        StackPane.setAlignment(statusDot, Pos.BOTTOM_RIGHT);
+        avatarStack.getChildren().addAll(avatar, statusDot);
 
         VBox titleBox = new VBox(-2);
         Label channelName = new Label("Core_Dev_Team");
-        channelName.getStyleClass().add("chat-channel-name");
-        
-        HBox statusBox = new HBox(5);
-        statusBox.setAlignment(Pos.CENTER_LEFT);
-        Circle statusDot = new Circle(4, Color.web("#1bbd85"));
+        channelName.setStyle("-fx-text-fill: -app-on-surface; -fx-font-size: 16px; -fx-font-weight: bold;");
         Label statusLabel = new Label("ONLINE");
-        statusLabel.setStyle("-fx-text-fill: -app-tertiary; -fx-font-size: 10px; -fx-font-weight: bold;");
-        statusBox.getChildren().addAll(statusDot, statusLabel);
-        
-        titleBox.getChildren().addAll(channelName, statusBox);
+        statusLabel.setStyle("-fx-text-fill: -app-primary; -fx-font-size: 10px; -fx-font-weight: bold; -fx-letter-spacing: 0.1em;");
+        titleBox.getChildren().addAll(channelName, statusLabel);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         HBox rightIcons = new HBox(15);
         rightIcons.setAlignment(Pos.CENTER);
-        String[] icons = {"📹", "📞", "|", "🔍", "⋮"};
+        String[] icons = {"📹", "📞", "|", "🔍", "⋯"};
         for (String icon : icons) {
             Label l = new Label(icon);
-            l.setStyle("-fx-text-fill: -app-primary; -fx-font-size: 18px; -fx-cursor: hand;");
+            l.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 18px; -fx-cursor: hand;");
             if (icon.equals("|")) l.setStyle("-fx-text-fill: -app-outline-variant; -fx-font-size: 18px;");
             rightIcons.getChildren().add(l);
         }
 
-        header.getChildren().addAll(avatar, titleBox, spacer, rightIcons);
+        header.getChildren().addAll(avatarStack, titleBox, spacer, rightIcons);
         setTop(header);
 
         // 2. Message List (Center)
         chatBox = new VBox(20);
         chatBox.getStyleClass().add("message-list");
-        chatBox.setStyle("-fx-background-color: transparent;");
-
+        chatBox.setPadding(new Insets(24));
+        
         chatScrollPane = new ScrollPane(chatBox);
         chatScrollPane.setFitToWidth(true);
         chatScrollPane.getStyleClass().add("chat-scroll-pane");
-        chatScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        VBox.setVgrow(chatScrollPane, Priority.ALWAYS);
         chatBox.heightProperty().addListener((observable, oldValue, newValue) -> chatScrollPane.setVvalue(1.0));
-
         setCenter(chatScrollPane);
 
         // 3. Input Area (Bottom)
-        HBox bottomWrapper = new HBox(15);
+        HBox bottomWrapper = new HBox();
         bottomWrapper.getStyleClass().add("chat-input-footer");
-        bottomWrapper.setPadding(new Insets(15, 25, 15, 25));
         bottomWrapper.setAlignment(Pos.CENTER);
 
-        HBox toolGroup = new HBox(10);
-        toolGroup.setAlignment(Pos.CENTER);
-        Label addIcon = new Label("+");
-        addIcon.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 24px; -fx-cursor: hand;");
-        Label moodIcon = new Label("😊");
-        moodIcon.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 20px; -fx-cursor: hand;");
-        toolGroup.getChildren().addAll(addIcon, moodIcon);
+        HBox inputContainer = new HBox(10);
+        inputContainer.getStyleClass().add("input-container");
+        HBox.setHgrow(inputContainer, Priority.ALWAYS);
+        inputContainer.setAlignment(Pos.CENTER);
+
+        Label addBtn = new Label("⊕");
+        Label attachBtn = new Label("📎");
+        addBtn.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 20px; -fx-cursor: hand;");
+        attachBtn.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 20px; -fx-cursor: hand;");
 
         inputField = new TextField();
-        inputField.setPromptText("Type a message or paste code snippet...");
-        inputField.getStyleClass().add("input-field-custom");
+        inputField.setPromptText("Type a secure message...");
+        inputField.setStyle("-fx-background-color: transparent; -fx-text-fill: -app-on-surface;");
         HBox.setHgrow(inputField, Priority.ALWAYS);
-        
-        inputField.setStyle("-fx-background-color: -app-surface-container-lowest; -fx-border-color: -app-outline-variant; -fx-padding: 10 15; -fx-background-radius: 4; -fx-border-radius: 4;");
+
+        Label moodBtn = new Label("😊");
+        moodBtn.setStyle("-fx-text-fill: -app-on-surface-variant; -fx-font-size: 20px; -fx-cursor: hand;");
 
         Button sendBtn = new Button("➤");
         sendBtn.getStyleClass().add("send-button");
-        sendBtn.setPrefSize(48, 48);
-        sendBtn.setStyle("-fx-background-color: -app-primary; -fx-text-fill: white; -fx-font-size: 18px; -fx-background-radius: 4;");
+        sendBtn.setPrefSize(40, 40);
 
-        bottomWrapper.getChildren().addAll(toolGroup, inputField, sendBtn);
+        inputContainer.getChildren().addAll(addBtn, attachBtn, inputField, moodBtn, sendBtn);
+        bottomWrapper.getChildren().add(inputContainer);
         setBottom(bottomWrapper);
 
         // Action Handlers
@@ -124,13 +125,13 @@ public class ChatArea extends BorderPane {
     }
 
     public void addMyMessage(String time, String message) {
-        VBox messageCard = MessageBubble.create("YOU", time, message, true);
+        HBox messageCard = MessageBubble.create("YOU", time, message, true);
         chatBox.getChildren().add(messageCard);
         messageCount++;
     }
 
     public void addOtherMessage(String sender, String time, String message) {
-        VBox messageCard = MessageBubble.create(sender, time, message, false);
+        HBox messageCard = MessageBubble.create(sender, time, message, false);
         chatBox.getChildren().add(messageCard);
         messageCount++;
     }
