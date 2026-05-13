@@ -1,0 +1,6 @@
+target/
+.idea/
+*.class
+*.log
+.DS_Store
+src/gui/chat_background_nebula.png
