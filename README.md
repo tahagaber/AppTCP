@@ -1,49 +1,63 @@
-# TCP - Socket Application 🚀
+# DevChat v1.0 - Advanced TCP Socket Application 🚀
 
-This project is a high-performance, real-time Chat Application built using **Java**, **JavaFX**, and **TCP/IP Sockets**. It features a premium "Pro Terminal" aesthetic and robust multithreaded architecture.
+This project is a high-performance, real-time Chat Application built using **Java**, **JavaFX**, and **TCP/IP Sockets**. It features a premium "DevChat v1.0" dark-themed interface and a robust multithreaded architecture.
 
 ---
 
 ## 1. Key Features & Improvements 🌟
-*   **TCP Branding:** Completely rebranded as a technical "TCP Pro Terminal" interface.
-*   **Premium Light UI:** A state-of-the-art interface using **Geist** and **Hanken Grotesk** fonts, precision shadows, and smooth transitions.
-*   **Intelligent Port Mapping:** Automatic port calculation based on Academic ID rules:
-    - Uses last 5 digits of ID.
-    - Caps at 65535 (uses last 4 if exceeded).
-    - Ensures port > 1024 (adds 10000 if needed).
-*   **Real-time Node Tracking:** A dynamic sidebar that updates automatically as users join or leave the network.
-*   **Broadcast Engine:** Instant message distribution to all active nodes with integrated timestamps.
+*   **DevChat v1.0 Design System:** A sophisticated dark-themed UI inspired by modern terminal IDEs and communication platforms.
+*   **Sophisticated Layout:**
+    *   **Side Rail:** Quick navigation for Chats, Contacts, and Settings.
+    *   **Messages Sidebar:** Real-time tracking of active threads and users.
+    *   **Chat Engine:** Smooth message bubbles with integrated timestamps and "Seen" indicators.
+*   **Intelligent Port Automation:** Automatic port calculation based on Academic ID (e.g., `2220550` -> Port `22550`).
+*   **Real-time Node Tracking:** Dynamic sidebar updates as users join or leave the network.
+*   **High-Fidelity Broadcasting:** Instant message distribution to all active nodes.
 
 ---
 
-## 2. Server Architecture: How it Works 🧠
+## 2. Technical Architecture 🧠
 
-The server (`ServerApp.java`) acts as the central orchestrator for the entire network. Here is the step-by-step mechanism:
+### A. The Multithreaded Server (`ServerApp.java`)
+The server acts as the central orchestrator, managing simultaneous connections without blocking.
+1.  **Thread-Per-Client:** Each connecting user is assigned a dedicated `ClientHandler` thread.
+2.  **Thread-Safe Registry:** Uses `Collections.synchronizedList` to manage active sockets safely across multiple threads.
+3.  **Broadcast Protocol:** 
+    *   Receives data from one client thread.
+    *   Distributes it to all other active threads.
+    *   Handles `USERLIST:` commands to synchronize UI states across the network.
 
-### A. Initialization
-1.  **Port Calculation:** The server starts by calculating its listening port using the `IDUtils` utility.
-2.  **Socket Opening:** It opens a `ServerSocket` on that port and enters an infinite `while(true)` loop.
-
-### B. Connection Handling (The Multithreaded Core)
-1.  **Acceptance:** When a client attempts to connect, `serverSocket.accept()` creates a unique `Socket` for that session.
-2.  **Thread Dispatching:** To prevent the server from "freezing" while talking to one client, it wraps the connection in a `ClientHandler` and launches it in a **new Thread**.
-3.  **Client Registry:** Every active connection is stored in a `synchronizedList` to ensure thread-safety during broadcast operations.
-
-### C. Communication Protocol
-1.  **Handshake:** Upon connection, the client sends its **Username** as the first piece of data.
-2.  **Message Routing:** The `ClientHandler` listens for incoming text. Any message received is passed back to `ServerApp.broadcast()`.
-3.  **Broadcasting:** The server iterates through all registered clients and writes the message to their output streams simultaneously.
-4.  **Special Commands:** The server sends messages prefixed with `USERLIST:` to signal the GUI to update the sidebar list.
-
-### D. Stability & Cleanup
--   **Graceful Exit:** If a client disconnects (closes the app or sends "EXIT"), the server catches the exception, removes the user from the list, and broadcasts a "Left the chat" notification to others.
+### B. The Modern GUI (`ChatClientGUI.java` & `ChatArea.java`)
+The interface is built to handle high-frequency data streams smoothly.
+1.  **Background Networking:** A dedicated listener thread handles incoming socket data to keep the UI responsive.
+2.  **Thread Integration:** Uses `Platform.runLater()` to safely push network data into the JavaFX UI thread, preventing concurrency crashes.
+3.  **CSS Design System:** Fully customized `style.css` using modern CSS variables (Design Tokens) for consistent colors, spacing, and animations.
 
 ---
 
-## 3. How to Run 🏃‍♂️
-1.  **Start the Server:** Run `ServerApp.java`. Look for the "Starting TCP Multithreaded Server" log.
-2.  **Launch Clients:** Run `Main.java` (you can run it multiple times to simulate multiple users).
-3.  **Interact:** Enter a message in the "TCP Pro Terminal" and see it broadcasted across all instances.
+## 3. Communication Logic 📡
+1.  **Handshake:** Upon connection, the client sends its unique username to the server.
+2.  **State Sync:** The server immediately broadcasts an updated `USERLIST:` to all clients.
+3.  **Messaging:** 
+    *   `[Time] Sender: Message` format for standard communication.
+    *   Automatic parsing of timestamps and sender names for custom bubble rendering.
+4.  **Resilience:** Automatic detection of connection drops with "Transmission Link Terminated" feedback in the GUI.
+
+---
+
+## 4. How to Run 🏃‍♂️
+1.  **Start the Server:** Execute `ServerApp.java`. It will open a port based on the utility rules.
+2.  **Launch Clients:** Execute `Main.java`. You can launch multiple instances to simulate a full chat network.
+3.  **Chat:** Enter messages in the input bar. Watch as they populate across all connected instances in real-time.
+
+---
+
+## 5. Technology Stack 🛠
+- **Core:** Java 17+
+- **UI Framework:** JavaFX (Graphics, Layouts, CSS)
+- **Networking:** Java Sockets (TCP/IP)
+- **Concurrency:** Java Threads & Runnables
+- **Styling:** Vanilla CSS 3 with Custom Properties
 
 ---
 **Developed as a high-fidelity implementation of Network Programming and Modern UI/UX patterns.**
